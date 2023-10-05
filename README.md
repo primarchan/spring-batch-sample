@@ -24,3 +24,27 @@
 ### Docker
 - docker-compose.yml
 - `docker-compse up -d`
+
+<details>
+<summary>docker-compose.yml 예시</summary>
+
+```yml
+version: '3'
+
+services:
+  mysql:
+    container_name: mysql_house
+    image: mysql/mysql-server:5.7
+    environment:
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_USER: "house"
+      MYSQL_PASSWORD: "house"
+      MYSQL_DATABASE: "house"
+    ports:
+      - "3305:3306"
+    command:
+      - "mysqld"
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_unicode_ci"
+```
+</details>
