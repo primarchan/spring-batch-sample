@@ -37,14 +37,57 @@ services:
     image: mysql/mysql-server:5.7
     environment:
       MYSQL_ROOT_HOST: '%'
-      MYSQL_USER: "house"
-      MYSQL_PASSWORD: "house"
-      MYSQL_DATABASE: "house"
+      MYSQL_USER: ****
+      MYSQL_PASSWORD: ****
+      MYSQL_DATABASE: house
     ports:
       - "3305:3306"
     command:
       - "mysqld"
       - "--character-set-server=utf8mb4"
       - "--collation-server=utf8mb4_unicode_ci"
+```
+</details>
+
+<details>
+<summary>application.yml 예시</summary>
+
+```yml
+spring:
+  profiles:
+    active: local
+  batch:
+    job:
+      names: ${job.name:NONE}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3305/house
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ****
+    password: ****
+  jpa:
+    show-sql: true
+    generate-ddl: false
+    hibernate:
+      ddl-auto: none
+  batch:
+    jdbc:
+      initialize-schema: ALWAYS
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  jpa:
+    database: h2
+  batch:
+    job:
+      names: plainTextJob
 ```
 </details>
