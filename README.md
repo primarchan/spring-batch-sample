@@ -16,6 +16,8 @@
 ## BUILD & RUN
 - 특정 Job 실행 시 Program arguments 에 Job 이름 추가
   - `--spring.bathc.job.names=${Job 이름}`
+- JobParameter 추가
+  - `--spring.bathc.job.names=${Job 이름} -${JobParamter 이름}=${JobParameter Value}`
 - Window/Mac OS 에서 Build 한 파일이 있는 곳까지 명령프롬프트/터미널을 통해 접근해서 실행
   - `.gradlew bootJar`
   - `java -jar build/libs/${빌드한 파일}.jar --spring.batch.job.names=${Job 이름}`
