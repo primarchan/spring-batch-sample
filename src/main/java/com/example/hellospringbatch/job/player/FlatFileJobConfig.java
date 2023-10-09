@@ -1,5 +1,6 @@
 package com.example.hellospringbatch.job.player;
 
+import com.example.hellospringbatch.core.service.PlayerSalaryService;
 import com.example.hellospringbatch.dto.PlayerDto;
 import com.example.hellospringbatch.dto.PlayerSalaryDto;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +11,9 @@ import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.adapter.ItemProcessorAdapter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
@@ -39,13 +42,17 @@ public class FlatFileJobConfig {
 
     @Bean
     @JobScope
-    public Step flatFileStep(FlatFileItemReader<PlayerDto> playerFileItemReader) {
+    public Step flatFileStep(
+            FlatFileItemReader<PlayerDto> playerFileItemReader,
+            ItemProcessorAdapter<PlayerDto, PlayerSalaryDto> playerSalaryItemProcessorAdapter
+    ) {
         return stepBuilderFactory.get("flatFileStep")
-                .<PlayerDto, PlayerDto>chunk(5)
+                .<PlayerDto, PlayerSalaryDto>chunk(5)
                 .reader(playerFileItemReader)
-                .writer(new ItemWriter<PlayerDto>() {
+                .processor(playerSalaryItemProcessorAdapter)
+                .writer(new ItemWriter<>() {
                     @Override
-                    public void write(List<? extends PlayerDto> items) throws Exception {
+                    public void write(List<? extends PlayerSalaryDto> items) throws Exception {
                         items.forEach(System.out::println);
                     }
                 })
@@ -61,6 +68,27 @@ public class FlatFileJobConfig {
                 .fieldSetMapper(new PlayerFileSetMapper())
                 .resource(new FileSystemResource("player-list.txt"))
                 .build();
+    }
+
+    @Bean
+    @StepScope
+    public ItemProcessorAdapter playerSalaryItemProcessorAdapter(PlayerSalaryService playerSalaryService) {
+        ItemProcessorAdapter<PlayerDto, PlayerSalaryDto> adapter = new ItemProcessorAdapter();
+        adapter.setTargetObject(playerSalaryService);
+        adapter.setTargetMethod("calculateSalary");
+
+        return adapter;
+    }
+
+    @Bean
+    @StepScope
+    public ItemProcessor<PlayerDto, PlayerSalaryDto> playerSalaryItemProcessor(PlayerSalaryService playerSalaryService) {
+        return new ItemProcessor<PlayerDto, PlayerSalaryDto>() {
+            @Override
+            public PlayerSalaryDto process(PlayerDto item) throws Exception {
+                return playerSalaryService.calculateSalary(item);
+            }
+        };
     }
 
 }
