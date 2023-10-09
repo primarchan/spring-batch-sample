@@ -15,12 +15,18 @@ import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.adapter.ItemProcessorAdapter;
 import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.FlatFileItemWriter;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.item.file.builder.FlatFileItemWriterBuilder;
+import org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor;
+import org.springframework.batch.item.file.transform.DelimitedLineAggregator;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 @Configuration
@@ -44,18 +50,14 @@ public class FlatFileJobConfig {
     @JobScope
     public Step flatFileStep(
             FlatFileItemReader<PlayerDto> playerFileItemReader,
-            ItemProcessorAdapter<PlayerDto, PlayerSalaryDto> playerSalaryItemProcessorAdapter
+            ItemProcessorAdapter<PlayerDto, PlayerSalaryDto> playerSalaryItemProcessorAdapter,
+            FlatFileItemWriter<PlayerSalaryDto> playerFileItemWriter
     ) {
         return stepBuilderFactory.get("flatFileStep")
                 .<PlayerDto, PlayerSalaryDto>chunk(5)
                 .reader(playerFileItemReader)
                 .processor(playerSalaryItemProcessorAdapter)
-                .writer(new ItemWriter<>() {
-                    @Override
-                    public void write(List<? extends PlayerSalaryDto> items) throws Exception {
-                        items.forEach(System.out::println);
-                    }
-                })
+                .writer(playerFileItemWriter)
                 .build();
     }
 
@@ -89,6 +91,27 @@ public class FlatFileJobConfig {
                 return playerSalaryService.calculateSalary(item);
             }
         };
+    }
+
+    @Bean
+    @StepScope
+    public FlatFileItemWriter<PlayerSalaryDto> playerFileItemWriter() throws IOException {
+        BeanWrapperFieldExtractor<PlayerSalaryDto> fieldExtractor = new BeanWrapperFieldExtractor<>();
+        fieldExtractor.setNames(new String[]{"ID", "firstName", "lastName", "salary"});
+        fieldExtractor.afterPropertiesSet();
+
+        DelimitedLineAggregator<PlayerSalaryDto> lineAggregator = new DelimitedLineAggregator<>();
+        lineAggregator.setDelimiter("\t");
+        lineAggregator.setFieldExtractor(fieldExtractor);
+
+        // 기존 파일을 덮어쓴다.
+        new File("player-salary-list.txt").createNewFile();
+        FileSystemResource resource = new FileSystemResource("player-salary-list.txt");
+
+        return new FlatFileItemWriterBuilder<PlayerSalaryDto>().name("playerFileItemWriter")
+                .resource(resource)
+                .lineAggregator(lineAggregator)
+                .build();
     }
 
 }
