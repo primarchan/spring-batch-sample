@@ -22,7 +22,6 @@ class PlayerSalaryServiceTest {
         playerSalaryService = new PlayerSalaryService();
     }
 
-
     @Test
     public void calculateSalary() {
         // given
