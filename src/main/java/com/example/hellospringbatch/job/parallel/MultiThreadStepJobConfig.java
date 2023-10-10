@@ -86,7 +86,7 @@ public class MultiThreadStepJobConfig {
     public ItemProcessor<AmountDto, AmountDto> amountFileItemProcessor() {
 
         return item -> {
-            System.out.println(item + "\tThread = " + Thread.currentThread().getName());
+            System.out.println(item + "\tqThread = " + Thread.currentThread().getName());
           item.setAmount(item.getAmount() * 100);
           return item;
         };
